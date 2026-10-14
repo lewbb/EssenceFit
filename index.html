@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Essence Fit | Moda fitness feminina</title>
+  <meta name="description" content="Conjuntos, leggings e calções fitness femininos. Peças novas todo mês. Entregamos em Ponta Grossa, Carambeí e Castro.">
+
+  <!-- Depois: favicon, fonte e CSS -->
+  <!-- <link rel="icon" href="img/favicon.png"> -->
+  <!-- <link rel="stylesheet" href="css/style.css"> -->
+</head>
+<body>
+
+  <!-- ============ TOPO ============ -->
+  <header id="topo">
+    <a href="index.html" aria-label="Essence Fit, página inicial">
+      <img src="img/logo.png" alt="Essence Fit" width="140" height="48">
+    </a>
+
+    <nav aria-label="Menu principal">
+      <ul>
+        <li><a href="catalogo.html?categoria=conjuntos">Conjuntos</a></li>
+        <li><a href="catalogo.html?categoria=calcoes">Calções</a></li>
+        <li><a href="catalogo.html?categoria=leggings">Leggings</a></li>
+        <li><a href="catalogo.html?categoria=novidades">Novidades</a></li>
+        <li><a href="catalogo.html?categoria=promocoes">Promoções</a></li>
+      </ul>
+    </nav>
+
+    <div id="topo-acoes">
+      <a href="conta.html">Entrar</a>
+      <a href="carrinho.html">Carrinho <span id="carrinho-qtd">0</span></a>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ============ HERO: sobre a loja ============ -->
+    <section id="hero" aria-labelledby="hero-titulo">
+      <div id="hero-texto">
+        <h1 id="hero-titulo">Treine com conforto e se sinta bem em cada peça</h1>
+        <p>
+          A Essence Fit é uma loja de moda fitness feminina com peças novas todo mês.
+          Conjuntos de leggings e tops, shorts e calções escolhidos para você treinar com estilo.
+        </p>
+        <a href="catalogo.html">Ver peças</a>
+        <a href="#carro-chefe">Conhecer o Conjunto Aurora</a>
+      </div>
+
+      <!-- Vídeo curto das peças e das modelos (aqui entram as animações) -->
+      <div id="hero-midia">
+        <video autoplay muted loop playsinline poster="img/hero-poster.jpg">
+          <source src="video/hero.mp4" type="video/mp4">
+        </video>
+      </div>
+    </section>
+
+    <!-- ============ CATEGORIAS ============ -->
+    <section id="categorias" aria-labelledby="categorias-titulo">
+      <h2 id="categorias-titulo">Escolha por categoria</h2>
+      <ul>
+        <li>
+          <a href="catalogo.html?categoria=conjuntos">
+            <img src="img/cat-conjuntos.jpg" alt="Conjuntos fitness" loading="lazy">
+            <span>Conjuntos</span>
+          </a>
+        </li>
+        <li>
+          <a href="catalogo.html?categoria=calcoes">
+            <img src="img/cat-calcoes.jpg" alt="Calções fitness" loading="lazy">
+            <span>Calções</span>
+          </a>
+        </li>
+        <li>
+          <a href="catalogo.html?categoria=leggings">
+            <img src="img/cat-leggings.jpg" alt="Leggings fitness" loading="lazy">
+            <span>Leggings</span>
+          </a>
+        </li>
+        <li>
+          <a href="catalogo.html?categoria=promocoes">
+            <img src="img/cat-promocoes.jpg" alt="Peças em promoção" loading="lazy">
+            <span>Promoções</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ============ CARRO-CHEFE ============ -->
+    <section id="carro-chefe" aria-labelledby="carro-chefe-titulo">
+      <figure>
+        <img src="img/aurora-modelo.jpg" alt="Modelo usando o Conjunto Aurora" loading="lazy">
+        <img src="img/aurora-peca.jpg" alt="Conjunto Aurora, foto da peça" loading="lazy">
+      </figure>
+      <div>
+        <h2 id="carro-chefe-titulo">Conjunto Aurora</h2>
+        <p>Nosso conjunto mais pedido. Veja as fotos reais da peça e da modelo antes de escolher.</p>
+        <!-- Depois o link vem do banco: produto.html?slug=conjunto-aurora -->
+        <a href="produto.html?slug=conjunto-aurora">Ver o Conjunto Aurora</a>
+      </div>
+    </section>
+
+    <!-- ============ NOVIDADES (preenchido pelo Supabase) ============ -->
+    <section id="novidades" aria-labelledby="novidades-titulo">
+      <h2 id="novidades-titulo">Novidades do mês</h2>
+      <p>Cada peça tem poucas unidades. Quando acaba, aparece como esgotada.</p>
+
+      <ul id="lista-novidades">
+        <!-- Os cards entram aqui via JavaScript, usando o template abaixo -->
+      </ul>
+
+      <a href="catalogo.html?categoria=novidades">Ver todas as novidades</a>
+    </section>
+
+    <!-- Molde do card de produto (o JavaScript copia este bloco para cada peça) -->
+    <template id="tpl-produto-card">
+      <li>
+        <a href="produto.html">
+          <img src="" alt="" loading="lazy">
+          <h3></h3>
+          <p>
+            <s data-preco-antigo hidden></s>
+            <strong data-preco></strong>
+          </p>
+          <p data-parcelas>Até 2x sem juros</p>
+          <p data-esgotado hidden>Esgotado</p>
+        </a>
+      </li>
+    </template>
+
+    <!-- ============ COMO COMPRAR ============ -->
+    <section id="como-comprar" aria-labelledby="como-comprar-titulo">
+      <h2 id="como-comprar-titulo">Como comprar</h2>
+      <ol>
+        <li>
+          <h3>Escolha a peça</h3>
+          <p>Veja as fotos, o tamanho, a cor e a tabela de medidas.</p>
+        </li>
+        <li>
+          <h3>Pague pelo site</h3>
+          <p>Pix, cartão de débito ou crédito. Em até 2x sem juros. Acima de 2x, os juros são do cartão.</p>
+        </li>
+        <li>
+          <h3>Receba em casa ou retire</h3>
+          <p>Entregamos em Ponta Grossa, Carambeí e Castro. Frete grátis em compras acima de R$ 150.</p>
+        </li>
+        <li>
+          <h3>Acompanhe o pedido</h3>
+          <p>Veja cada etapa do pedido no site, ou pelo WhatsApp.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ============ ACOMPANHAR PEDIDO ============ -->
+    <section id="acompanhar" aria-labelledby="acompanhar-titulo">
+      <h2 id="acompanhar-titulo">Acompanhar pedido</h2>
+      <p>Informe o número do pedido e o telefone usado na compra.</p>
+
+      <form id="form-acompanhar">
+        <label for="acomp-numero">Número do pedido</label>
+        <input id="acomp-numero" name="numero" type="text" inputmode="numeric" required>
+
+        <label for="acomp-telefone">Telefone</label>
+        <input id="acomp-telefone" name="telefone" type="tel" autocomplete="tel" required>
+
+        <button type="submit">Ver status do pedido</button>
+      </form>
+
+      <!-- O resultado aparece aqui -->
+      <div id="acompanhar-resultado" aria-live="polite"></div>
+    </section>
+
+    <!-- ============ DÚVIDAS / WHATSAPP ============ -->
+    <section id="duvidas" aria-labelledby="duvidas-titulo">
+      <h2 id="duvidas-titulo">Ficou com dúvida?</h2>
+      <p>Chame no WhatsApp para falar sobre tamanho, entrega, retirada ou encomenda de peças de coleções antigas.</p>
+      <!-- Troque 55XXXXXXXXXXX pelo número da loja (só dígitos) -->
+      <a href="https://wa.me/55XXXXXXXXXXX?text=Oi!%20Tenho%20d%C3%BAvidas%20sobre%20o%20tamanho."
+         target="_blank" rel="noopener">Tenho dúvidas sobre o tamanho</a>
+    </section>
+
+  </main>
+
+  <!-- ============ RODAPÉ ============ -->
+  <footer id="rodape">
+    <div>
+      <img src="img/logo.png" alt="Essence Fit" width="120" height="40" loading="lazy">
+      <p>Moda fitness feminina. Ponta Grossa, Carambeí e Castro.</p>
+    </div>
+
+    <nav aria-label="Atendimento e políticas">
+      <h2>Atendimento</h2>
+      <ul>
+        <li><a href="politicas.html#trocas">Trocas e devoluções</a></li>
+        <li><a href="politicas.html#entrega">Entrega e retirada</a></li>
+        <li><a href="politicas.html#pagamento">Formas de pagamento</a></li>
+        <li><a href="politicas.html#privacidade">Política de privacidade</a></li>
+        <li><a href="politicas.html#termos">Termos de uso</a></li>
+      </ul>
+    </nav>
+
+    <nav aria-label="Redes sociais">
+      <h2>Redes</h2>
+      <ul>
+        <!-- Troque pelo @ real da loja -->
+        <li><a href="https://instagram.com/SEU_PERFIL" target="_blank" rel="noopener">Instagram</a></li>
+        <li><a href="https://wa.me/55XXXXXXXXXXX" target="_blank" rel="noopener">WhatsApp</a></li>
+      </ul>
+    </nav>
+
+    <p><small>&copy; 2026 Essence Fit. Todos os direitos reservados.</small></p>
+  </footer>
+
+  <!-- Depois: scripts (Supabase, carrinho, vitrine) -->
+  <!-- <script type="module" src="js/main.js"></script> -->
+</body>
+</html>
