@@ -9,7 +9,7 @@ const SITE_DEF={
   {img:"",titulo:"Novidades da *semana*",texto:"Peças exclusivas, uma por tamanho e cor. Garanta a sua antes que acabe.",botao:"Ver lançamentos",link:"#novidades"},
   {img:"",titulo:"Aproveite as *promoções*",texto:"Preços especiais em peças selecionadas, por tempo limitado.",botao:"Ver promoções",link:"#promocoes"}],
  perks:[{t:"Frete grátis",s:"acima de R$ 150"},{t:"Até 2x sem juros",s:"Pix, débito e crédito"},{t:"Troca em 7 dias",s:"por tamanho ou cor"},{t:"Peças exclusivas",s:"uma por tamanho e cor"}],
- sobre:"A Essence Fit nasceu há poucos meses em Carambeí. Cada coleção é **pequena e exclusiva**. Gostou de algo de uma coleção anterior? **Dá para encomendar.**",
+ sobre:"A Essence Fit nasceu há poucos meses em Ponta Grossa. Cada coleção é **pequena e exclusiva**: temos uma peça por tamanho e cor. Gostou de algo de uma coleção anterior? **Dá para encomendar.**",
  tilesTitulo:"Compre por categoria",tiles:["","","",""],
  railNov:"Novidades",railPro:"Promoções",
  depoTitulo:"Quem usa",
