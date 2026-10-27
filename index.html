@@ -816,8 +816,8 @@ function calcHTML(sub){
   return `<div class="calc"><label for="cep">Calcular frete</label><div class="cepr"><input id="cep" inputmode="numeric" maxlength="9" placeholder="Seu CEP" value="${esc(entrega.cep)}"><button class="chip" data-calc>Calcular</button></div><p class="note">${m||`Entregamos em ${Object.keys(CIDADES).join(", ")}. Frete grátis acima de ${R(FRETE_GRATIS)}.`}</p><button class="wa" data-ret style="margin:4px auto 0">Prefiro retirar</button></div>`;
 }
 function refresh(){drawCart();if($("#pov").classList.contains("on"))drawProduct()}
-async function calcular(){
-  const el=$("#cep"),cep=(el?el.value:"").replace(/\D/g,"");
+async function calcular(src){
+  const box=src&&src.closest?src.closest(".calc"):null,el=(box&&box.querySelector("#cep"))||$("#cep"),cep=(el?el.value:"").replace(/\D/g,"");
   entrega={cidade:"",retirada:false,cep:el?el.value:"",erro:""};
   if(cep.length!==8){entrega.erro="Digite um CEP com 8 números.";return refresh()}
   try{
@@ -891,7 +891,7 @@ document.addEventListener("click",e=>{
   else if(t.id==="fin"){finalizar()}
   else if(d.track!==undefined){rastrear()}
   else if(d.novo!==undefined){feito=null;toggle("#cov",false);drawCart()}
-  else if(d.calc!==undefined){calcular()}
+  else if(d.calc!==undefined){calcular(t)}
   else if(d.ret!==undefined){entrega={cidade:"",retirada:true,cep:"",erro:""};refresh()}
   else if(d.close!==undefined){toggle("#pov",false);toggle("#cov",false)}
   else if(t.id==="openCart"){drawCart();toggle("#cov",true)}
@@ -904,7 +904,7 @@ document.addEventListener("change",e=>{
   if(e.target.id==="ent"){const v=e.target.value;entrega=v?{cidade:v,retirada:false}:{cidade:"",retirada:true};drawCart()}
 });
 ["pov","cov","rov"].forEach(id=>$("#"+id).addEventListener("click",e=>{if(e.target.id===id)toggle("#"+id,false)}));
-document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="cep")calcular();if(e.key==="Escape"){toggle("#pov",false);toggle("#cov",false);toggle("#rov",false);$("#lb").classList.remove("on")}});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="cep")calcular(e.target);if(e.key==="Escape"){toggle("#pov",false);toggle("#cov",false);toggle("#rov",false);$("#lb").classList.remove("on")}});
 
 /* Início */
 document.getElementById("lb").addEventListener("click",e=>e.currentTarget.classList.remove("on"));
