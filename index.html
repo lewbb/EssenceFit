@@ -335,6 +335,17 @@ header{transition:box-shadow .25s}header.sc{box-shadow:0 4px 18px rgba(31,52,71,
 @media(prefers-reduced-motion:reduce){.cw,.cw.sk .ph{animation:none}}
 .hero h1,.hero p{text-shadow:0 0 1px #000,0 1px 3px rgba(0,0,0,.7),0 2px 14px rgba(0,0,0,.6),0 0 32px rgba(0,0,0,.45)}.hero h1{-webkit-text-stroke:.6px rgba(0,0,0,.35);paint-order:stroke fill}
 .pixbox{text-align:center;border:1.5px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}#pixqr{width:200px;max-width:70%;margin:0 auto}#pixqr svg{width:100%;height:auto;display:block}.pixbox textarea{width:100%;font-size:.72rem;border:1.5px solid var(--line);border-radius:10px;padding:8px;resize:none;color:var(--muted)}
+/* ===== Visual inspirado em loja de moda fitness ===== */
+.card .ph{border-radius:14px}.card h3,.card .price{text-align:left}.card h3{font-size:.95rem}
+.card .price{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.card .price s{color:var(--muted);font-size:.85rem}.card .price b{font-weight:600}
+.card .par{font-size:.8rem;color:var(--muted);margin-top:2px}.card .mini,.card .dots{justify-content:flex-start}
+.perks{background:#fff;border-bottom:1px solid var(--line)}.perks .wrap>div{display:flex;gap:12px;align-items:center;justify-content:center;text-align:left}
+.perks svg{width:28px;height:28px;flex:none;color:var(--ink)}.perks .pt{display:block}
+.rails .wrap{position:relative}.rnav{position:absolute;top:46%;width:40px;height:40px;border-radius:50%;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.18);font-size:1.3rem;z-index:3;display:none}
+.rnav.l{left:-6px}.rnav.r{right:-6px}@media(hover:hover) and (min-width:900px){.rnav{display:block}}
+.fpay{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}.fpay span{border:1px solid var(--line);border-radius:8px;padding:5px 11px;font-size:.8rem;color:var(--muted);background:#fff}
+.finfo{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:22px 0;border-bottom:1px solid var(--line);margin-bottom:22px}.finfo b{display:block;font-weight:500}.finfo span{font-size:.85rem;color:var(--muted)}
+@media(max-width:760px){.finfo{grid-template-columns:repeat(2,1fr)}}
 </style>
 <script src="site-padrao.js"></script>
 </head>
@@ -442,11 +453,12 @@ header{transition:box-shadow .25s}header.sc{box-shadow:0 4px 18px rgba(31,52,71,
 </main>
 
 <footer><div class="wrap">
+  <div class="finfo"><div><b>Atendimento</b><span>pelo WhatsApp</span></div><div><b>Trocas e devoluções</b><span>até 7 dias após o recebimento</span></div><div><b>Entrega</b><span>Ponta Grossa, Carambeí e Castro</span></div><div><b>Parcelamento</b><span>até 2x sem juros no cartão</span></div></div>
   <div class="fcols">
     <div><img class="lotus" alt="" aria-hidden="true"><p id="rodP">Moda fitness feminina, com peças novas todo mês em Ponta Grossa, Carambeí e Castro.</p></div>
     <div><h4>Loja</h4><a href="#loja">Nossas peças</a><a href="#pedido">Meu pedido</a><a href="#politicas">Trocas e entrega</a></div>
-    <div><h4>Atendimento</h4><a href="#" data-wa="Oi! Tenho uma dúvida sobre a Essence Fit.">WhatsApp</a><p>Carambeí, PR</p></div>
-    <div><h4>Pagamento</h4><p>Pix, débito e crédito.<br>Até 2x sem juros.</p></div>
+    <div><h4>Atendimento</h4><a href="#" data-wa="Oi! Tenho uma dúvida sobre a Essence Fit.">WhatsApp</a><a href="https://instagram.com/ess_encefit" target="_blank" rel="noopener">Instagram @ess_encefit</a><p>Carambeí, PR</p></div>
+    <div><h4>Formas de pagamento</h4><div class="fpay" style="margin-top:6px"><span>Pix</span><span>Visa</span><span>Mastercard</span><span>Elo</span></div></div>
   </div>
   <p class="copy">© Essence Fit · Carambeí, PR</p>
 </div></footer>
@@ -566,6 +578,7 @@ function cardHTML(p){
     <div class="ph"><img src="${fotos(p)[0]}" alt="${esc(p.nome)}" loading="lazy">${tag?`<span class="tag">${tag}</span>`:""}${p.promo!=null&&p.preco>0?`<span class="pct">-${Math.round((1-p.promo/p.preco)*100)}%</span>`:""}${p.fotos.length>1?`<img class="h" src="${fotos(p)[1]}" alt="" loading="lazy">`:""}</div>
     <h3>${esc(p.nome)}</h3>
     <div class="price">${p.promo!=null?`<s>${R(p.preco)}</s>`:""}<b>${R(preco(p))}</b></div>
+    ${preco(p)>0?`<div class="par">ou 2x de ${R(preco(p)/2)} sem juros</div>`:""}
     ${(()=>{const c=[...new Set(p.vars.map(x=>x.cor))];return c.length>1?`<div class="dots">${c.slice(0,5).map(x=>`<i style="background:${bg(CORES[x])}" title="${esc(x)}"></i>`).join("")}${c.length>5?`<small>+${c.length-5}</small>`:""}</div>`:""})()}
     ${n&&n.t?`<div class="mini">${stars(n.m)}<span>${nota1(n.m)} (${n.t})</span></div>`:""}</button>
     <div class="hov">${heartBtn(p.id)}</div></div>`;
@@ -788,6 +801,7 @@ async function finalizar(){
     cart=[];save();await carregar();
   }catch(e){btn.disabled=false;btn.textContent="Finalizar pedido";erro(e.message);await carregar();$("#cmsg")&&($("#cmsg").textContent=e.message)}
 }
+const PI=['<path d="M2 6h11v9H2zM13 9h4l3 3v3h-7zM6 18.5a1.5 1.5 0 100-.01M17 18.5a1.5 1.5 0 100-.01"/>','<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>','<path d="M4 12a8 8 0 0113.7-5.6L20 9M20 4v5h-5M20 12a8 8 0 01-13.7 5.6L4 15M4 20v-5h5"/>','<path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>'].map(d=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`);
 /* ===== Pix copia e cola (QR estático, sem intermediário) ===== */
 const PIX_CHAVE="13236454970",PIX_NOME="NATACHA NUNES DO PRADO",PIX_CIDADE="CARAMBEI";
 function pixPayload(valor,txid){
@@ -958,7 +972,7 @@ function siteRender(){
   const S=SITE,E=siteEsc;
   $("#topbar .wrap").innerHTML=S.avisos.map(a=>`<span>${E(a)}</span>`).join("");
   heroShow(hi);
-  $("#perks").innerHTML=S.perks.map(p=>`<div><b>${E(p.t)}</b><span>${E(p.s)}</span></div>`).join("");
+  $("#perks").innerHTML=S.perks.map((p,i)=>`<div>${PI[i]||""}<span class="pt"><b>${E(p.t)}</b><span>${E(p.s)}</span></span></div>`).join("");
   $("#sobreP").innerHTML=siteFmt(S.sobre);$("#tilesT").textContent=S.tilesTitulo;
   document.querySelectorAll(".tile").forEach(t=>{t.querySelector("span").innerHTML=ICO(t.dataset.v)+"<em>"+E(t.dataset.v)+"</em>"});
   if(typeof PRODUTOS!=="undefined"&&PRODUTOS.length){
@@ -1019,7 +1033,8 @@ sb("/rest/v1/configuracoes?select=site&id=eq.1").then(r=>{if(r&&r[0]&&r[0].site)
 /* Acabamento: aviso ao adicionar na sacola + cabeçalho com sombra ao rolar */
 (function(){const t=document.createElement("div");t.className="toast";t.setAttribute("role","status");document.body.appendChild(t);let tm,last=0;
 const c=document.getElementById("count");if(c)new MutationObserver(()=>{const n=+c.textContent||0;if(n>last){t.textContent="Adicionado à sacola ✓";t.classList.add("on");clearTimeout(tm);tm=setTimeout(()=>t.classList.remove("on"),1800)}last=n}).observe(c,{childList:true,characterData:true,subtree:true});
-const h=document.querySelector("header");addEventListener("scroll",()=>h&&h.classList.toggle("sc",scrollY>10),{passive:true})})();
+const h=document.querySelector("header");(function(){const R=document.getElementById("rails");if(!R)return;const add=()=>R.querySelectorAll(".railrow").forEach(r=>{const w=r.parentNode;if(w.querySelector(".rnav"))return;[["l","‹",-1],["r","›",1]].forEach(([c,t,d])=>{const b=document.createElement("button");b.className="rnav "+c;b.textContent=t;b.setAttribute("aria-label",d<0?"Anterior":"Próxima");b.onclick=()=>r.scrollBy({left:d*r.clientWidth*.8,behavior:"smooth"});w.appendChild(b)})});new MutationObserver(add).observe(R,{childList:true,subtree:true});add()})();
+addEventListener("scroll",()=>h&&h.classList.toggle("sc",scrollY>10),{passive:true})})();
 </script>
 </body>
 </html>
