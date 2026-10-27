@@ -334,6 +334,7 @@ header{transition:box-shadow .25s}header.sc{box-shadow:0 4px 18px rgba(31,52,71,
 .toast.on{opacity:1;transform:translate(-50%,0)}
 @media(prefers-reduced-motion:reduce){.cw,.cw.sk .ph{animation:none}}
 .hero h1,.hero p{text-shadow:0 0 1px #000,0 1px 3px rgba(0,0,0,.7),0 2px 14px rgba(0,0,0,.6),0 0 32px rgba(0,0,0,.45)}.hero h1{-webkit-text-stroke:.6px rgba(0,0,0,.35);paint-order:stroke fill}
+.pixbox{text-align:center;border:1.5px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}#pixqr{width:200px;max-width:70%;margin:0 auto}#pixqr svg{width:100%;height:auto;display:block}.pixbox textarea{width:100%;font-size:.72rem;border:1.5px solid var(--line);border-radius:10px;padding:8px;resize:none;color:var(--muted)}
 </style>
 <script src="site-padrao.js"></script>
 </head>
@@ -787,13 +788,24 @@ async function finalizar(){
     cart=[];save();await carregar();
   }catch(e){btn.disabled=false;btn.textContent="Finalizar pedido";erro(e.message);await carregar();$("#cmsg")&&($("#cmsg").textContent=e.message)}
 }
+/* ===== Pix copia e cola (QR estático, sem intermediário) ===== */
+const PIX_CHAVE="13236454970",PIX_NOME="NATACHA NUNES DO PRADO",PIX_CIDADE="CARAMBEI";
+function pixPayload(valor,txid){
+  const f=(id,v)=>id+String(v.length).padStart(2,"0")+v, sa=t=>t.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9 ]/g,"").toUpperCase();
+  const p=f("00","01")+f("01","11")+f("26",f("00","br.gov.bcb.pix")+f("01",PIX_CHAVE))+f("52","0000")+f("53","986")+f("54",(+valor).toFixed(2))+f("58","BR")+f("59",sa(PIX_NOME).slice(0,25))+f("60",sa(PIX_CIDADE).slice(0,15))+f("62",f("05",String(txid||"***").replace(/[^A-Za-z0-9]/g,"").slice(0,25)||"***"))+"6304";
+  let c=0xFFFF;for(let i=0;i<p.length;i++){c^=p.charCodeAt(i)<<8;for(let k=0;k<8;k++)c=c&0x8000?((c<<1)^0x1021)&0xFFFF:(c<<1)&0xFFFF}
+  return p+c.toString(16).toUpperCase().padStart(4,"0");
+}
 function drawFeito(){
   const f=feito;$("#count").textContent=cart.reduce((n,c)=>n+(c.qtd||1),0);
   const txt=`Oi! Fiz o pedido ${f.codigo} no site:\n${f.itens.join("\n")}\nTotal: ${R(f.total)}\nEntrega: ${f.ent}\n${PAGAR_ONLINE?"Prefiro pagar pelo WhatsApp.":"Quero pagar por Pix/cartão."}`;
   $("#drawer").innerHTML=`<button class="x" data-close aria-label="Fechar">×</button><h2>Pedido recebido!</h2><p>Seu código: <b style="font-size:1.4rem">${f.codigo}</b></p><p class="note">Guarde este código. Com ele e o seu telefone você acompanha o pedido em "Meu pedido".</p><p style="margin:14px 0">Total: <b>${R(f.total)}</b></p>
   ${PAGAR_ONLINE?`<p>As peças já estão reservadas para você. Falta só o pagamento:</p><div><button class="btn" data-pay style="width:100%;margin-top:14px">Pagar agora com Pix ou cartão</button><p class="note err pmsg"></p></div><p class="note">Você vai para o Mercado Pago, um ambiente seguro. Depois de pagar, o status do pedido atualiza sozinho.</p><a class="wa" target="_blank" rel="noopener" href="${wa(txt)}">Prefiro pagar pelo WhatsApp</a>`
-  :`<p>As peças já estão reservadas. Agora é só combinar o pagamento pelo WhatsApp.</p><a class="btn" style="text-align:center;margin-top:14px" target="_blank" rel="noopener" href="${wa(txt)}">Enviar pedido pelo WhatsApp</a>`}
+  :`<p>As peças já estão reservadas. Pague pelo Pix abaixo e envie o comprovante pelo WhatsApp.</p>
+  <div class="pixbox"><div id="pixqr" aria-label="QR Code do Pix"></div><p class="note" style="margin:8px 0 4px">Pix copia e cola · ${R(f.total)}</p><textarea id="pixcod" readonly rows="3">${pixPayload(f.total,f.codigo)}</textarea><button class="btn" data-pixcopy style="width:100%;margin-top:8px">Copiar código Pix</button><p class="note">Recebedor: ${PIX_NOME.replace(/\b(\w)(\w*)/g,(m,a,b)=>a+b.toLowerCase())}. Confira o nome no app do banco antes de confirmar.</p></div>
+  <a class="btn" style="text-align:center;margin-top:14px" target="_blank" rel="noopener" href="${wa(`Oi! Paguei o pedido ${f.codigo} por Pix (${R(f.total)}). Segue o comprovante:`)}">Enviar comprovante pelo WhatsApp</a>`}
   <button class="wa" data-novo style="margin:12px auto 0">Continuar comprando</button>`;
+  try{const q=$("#pixqr");if(q&&window.qrcode){const o=qrcode(0,"M");o.addData($("#pixcod").value);o.make();q.innerHTML=o.createSvgTag({cellSize:4,margin:2,scalable:true})}}catch(e){}
 }
 async function rastrear(){
   const out=$("#tRes"),cod=$("#tCod").value,tel=$("#tTel").value;out.textContent="Buscando…";AVL=[];
@@ -890,6 +902,7 @@ document.addEventListener("click",e=>{
   else if(d.rm!==undefined){cart.splice(+d.rm,1);save();drawCart()}
   else if(t.id==="fin"){finalizar()}
   else if(d.track!==undefined){rastrear()}
+  else if(d.pixcopy!==undefined){const c=$("#pixcod");const ok=()=>{t.textContent="Código copiado ✓";setTimeout(()=>t.textContent="Copiar código Pix",2200)};(navigator.clipboard?navigator.clipboard.writeText(c.value).then(ok,()=>{c.select();document.execCommand("copy");ok()}):(c.select(),document.execCommand("copy"),ok()))}
   else if(d.novo!==undefined){feito=null;toggle("#cov",false);drawCart()}
   else if(d.calc!==undefined){calcular(t)}
   else if(d.ret!==undefined){entrega={cidade:"",retirada:true,cep:"",erro:""};refresh()}
@@ -1001,6 +1014,7 @@ document.addEventListener("keydown",e=>{if(!$("#gv").classList.contains("on"))re
 siteRender();heroAuto();
 sb("/rest/v1/configuracoes?select=site&id=eq.1").then(r=>{if(r&&r[0]&&r[0].site){SITE=siteMerge(SITE_DEF,r[0].site);siteRender()}}).catch(()=>{});
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" defer></script>
 <script>
 /* Acabamento: aviso ao adicionar na sacola + cabeçalho com sombra ao rolar */
 (function(){const t=document.createElement("div");t.className="toast";t.setAttribute("role","status");document.body.appendChild(t);let tm,last=0;
