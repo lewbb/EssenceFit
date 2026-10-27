@@ -260,7 +260,7 @@ function sync(){
   if(!E||!$("#ed"))return;
   document.querySelectorAll("#ed [data-f]").forEach(i=>{E[i.dataset.f]=i.type==="checkbox"?i.checked:i.value});
   E.sugestoes=[...document.querySelectorAll("#ed [data-sug]:checked")].map(i=>i.dataset.sug);
-  E.cores=[...document.querySelectorAll("#ed .cor")].map(c=>({nome:c.querySelector("[data-cn]").value,hex:c.querySelector("[data-ch]").value,est:Object.fromEntries([...c.querySelectorAll("[data-t]")].map(i=>[i.dataset.t,i.value]))}));
+  E.cores=[...document.querySelectorAll("#ed .cor")].map(c=>({nome:c.querySelector("[data-cn]").value,hex:[...c.querySelectorAll("[data-ch]")].map(i=>i.value).join(","),est:Object.fromEntries([...c.querySelectorAll("[data-t]")].map(i=>[i.dataset.t,i.value]))}));
 }
 function drawEd(){
   const e=E;
@@ -273,10 +273,10 @@ function drawEd(){
   <label>Descrição<textarea data-f="descricao">${esc(e.descricao)}</textarea></label>
   <div class="row"><label>Tecido<input data-f="tecido" value="${esc(e.tecido)}"></label><label>Cuidados<input data-f="cuidados" value="${esc(e.cuidados)}"></label></div>
   <label>Fotos (a primeira é a capa)</label>
-  <div class="ph">${e.fotos.map((f,i)=>`<div class="th ${i?"":"c"}"><img src="${esc(f)}" alt=""><button data-a="rmf" data-id="${i}" aria-label="Remover">×</button>${i?`<em data-a="capa" data-id="${i}" style="cursor:pointer">capa</em>`:""}</div>`).join("")}
+  <div class="ph">${e.fotos.map((f,i)=>`<div class="th ${i?"":"c"}"><img src="${esc(f)}" alt=""><select data-fc="${i}" aria-label="Cor desta foto" style="width:74px;font-size:.68rem;padding:3px 2px;margin-top:3px"><option value="">Todas</option>${e.cores.filter(c=>c.nome.trim()).map(c=>`<option value="${esc(c.nome.trim())}" ${f.endsWith("#cor="+encodeURIComponent(c.nome.trim()))?"selected":""}>${esc(c.nome.trim())}</option>`).join("")}</select><button data-a="rmf" data-id="${i}" aria-label="Remover">×</button>${i?`<em data-a="capa" data-id="${i}" style="cursor:pointer">capa</em>`:""}</div>`).join("")}
   <label class="btn alt sm" style="margin:0;align-self:center;cursor:pointer">+ Foto<input id="up" type="file" accept="image/*" multiple hidden></label></div>
   <label>Cores e estoque por tamanho</label><p class="sub">Deixe em branco os tamanhos que não existem. Use 0 para esgotado.</p>
-  ${e.cores.map((c,ci)=>`<div class="cor"><div class="top"><input data-cn value="${esc(c.nome)}" placeholder="Nome da cor (ex.: Azul)"><input type="color" data-ch value="${esc(c.hex||"#a9cdeb")}"><button data-a="rmc" data-id="${ci}" style="font-size:1.4rem;color:var(--bad)" aria-label="Remover cor">×</button></div>
+  ${e.cores.map((c,ci)=>`<div class="cor"><div class="top"><input data-cn value="${esc(c.nome)}" placeholder="Nome da cor (ex.: Azul)">${(c.hex||"#a9cdeb").split(",").map(h=>`<input type="color" data-ch value="${esc(h)}">`).join("")}${(c.hex||"").split(",").length<3?`<button data-a="addch" data-id="${ci}" class="btn alt sm" style="flex:none" title="Conjunto com mais de uma cor">+ cor</button>`:""}${(c.hex||"").split(",").length>1?`<button data-a="rmch" data-id="${ci}" class="btn alt sm" style="flex:none" title="Tirar última cor">−</button>`:""}<button data-a="rmc" data-id="${ci}" style="font-size:1.4rem;color:var(--bad)" aria-label="Remover cor">×</button></div>
   <div class="sz">${TM.map(t=>`<div><span>${esc(t.tamanho)}</span><input data-t="${esc(t.tamanho)}" inputmode="numeric" value="${esc(c.est[t.tamanho]??"")}"></div>`).join("")}</div></div>`).join("")}
   <button class="btn alt sm" style="margin-top:10px" data-a="addc">+ Adicionar cor</button>
   <label>Venda adicional: sugerir junto com esta peça</label><p class="sub">Aparece em "Combina com esta peça" e na sacola da cliente. Se ficar vazio, o site sugere peças de outras categorias.</p>
@@ -429,6 +429,8 @@ document.addEventListener("click",e=>{
   else if(a==="edit")edit(id);
   else if(a==="dup")dup(id);
   else if(a==="del")del(id);
+  else if(a==="addch"){sync();const c=E.cores[+id];if(c.hex.split(",").length<3){c.hex+=",#f1b9cc";drawEd()}}
+  else if(a==="rmch"){sync();const c=E.cores[+id],h=c.hex.split(",");if(h.length>1){h.pop();c.hex=h.join(",");drawEd()}}
   else if(a==="rmf"){sync();E.fotos.splice(+id,1);drawEd()}
   else if(a==="capa"){sync();const[f]=E.fotos.splice(+id,1);E.fotos.unshift(f);drawEd()}
   else if(a==="rmc"){sync();E.cores.splice(+id,1);drawEd()}
@@ -438,7 +440,7 @@ document.addEventListener("click",e=>{
   else if(a==="sclr"){const w=b.closest(".si");w.querySelector("[data-sp]").value="";w.querySelector("img").src=w.classList.contains("w")?sitePHW(0,"teste"):sitePH(0,"teste");toast("Foto de teste. Toque em Salvar.")}
   else if(a==="scfg")scfg();else if(a==="scid")scid(+id);else if(a==="dcid")dcid(+id);else if(a==="ncid")ncid();else if(a==="senha")senha();
 });
-document.addEventListener("change",e=>{if(e.target.id==="up"&&e.target.files.length)addFotos([...e.target.files])});
+document.addEventListener("change",e=>{if(e.target.dataset&&e.target.dataset.fc!==undefined){sync();const i=+e.target.dataset.fc,b=E.fotos[i].replace(/#cor=.*$/,""),v=e.target.value;E.fotos[i]=v?b+"#cor="+encodeURIComponent(v):b;drawEd();return}if(e.target.id==="up"&&e.target.files.length)addFotos([...e.target.files])});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeM()});
 if(S)entrar().catch(()=>{localStorage.removeItem("ef_admin");S=null});
 </script>
