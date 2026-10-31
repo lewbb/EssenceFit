@@ -366,7 +366,8 @@ header{transition:box-shadow .25s}header.sc{box-shadow:0 4px 18px rgba(31,52,71,
     <button class="cartbtn" id="openCart">Sacola (<span id="count">0</span>)</button>
     <button class="menubtn" id="openMenu" aria-label="Abrir menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </nav>
-</div></header>
+</div>
+<div class="hs" style="max-width:1100px;margin:0 auto;padding:0 18px 10px"><input id="hBusca" type="search" placeholder="Buscar peças: legging, conjunto, calção…" aria-label="Buscar peças" autocomplete="off" style="width:100%;padding:9px 18px;border:1.5px solid var(--line);border-radius:99px;background:#fff"></div></header>
 
 <main id="top">
 <section class="hero">
@@ -423,7 +424,7 @@ header{transition:box-shadow .25s}header.sc{box-shadow:0 4px 18px rgba(31,52,71,
       <div><span class="lbl">Tamanho</span><div class="opts" id="fTam"></div></div>
     </div>
   </details>
-  <div class="bar"><span id="qtd" aria-live="polite"></span><label for="fOrd">Ordenar por <select id="fOrd"></select></label></div>
+  <div class="bar"><span id="qtd" aria-live="polite"></span><input id="fBusca" type="search" placeholder="Buscar peça…" aria-label="Buscar peça" autocomplete="off" style="flex:1;min-width:120px;max-width:260px;padding:8px 16px;border:1.5px solid var(--line);border-radius:99px;background:#fff"><label for="fOrd">Ordenar por <select id="fOrd"></select></label></div>
   <div class="grid" id="grid"></div>
 </div></section>
 
@@ -477,7 +478,7 @@ header{transition:box-shadow .25s}header.sc{box-shadow:0 4px 18px rgba(31,52,71,
 
 <script>
 /* Diagnóstico: mostra erros em uma faixa vermelha na tela (pode remover depois) */
-function dbg(t){let d=document.getElementById("dbg");if(!d){d=document.createElement("div");d.id="dbg";d.style.cssText="position:fixed;left:8px;right:8px;bottom:8px;z-index:2147483647;background:#a4453f;color:#fff;padding:10px 14px;border-radius:10px;font:13px/1.4 system-ui;white-space:pre-wrap";document.body.appendChild(d)}d.textContent+=t+"\n"}
+function dbg(t){if(!/[?&]debug/.test(location.search))return;let d=document.getElementById("dbg");if(!d){d=document.createElement("div");d.id="dbg";d.style.cssText="position:fixed;left:8px;right:8px;bottom:8px;z-index:2147483647;background:#a4453f;color:#fff;padding:10px 14px;border-radius:10px;font:13px/1.4 system-ui;white-space:pre-wrap";document.body.appendChild(d)}d.textContent+=t+"\n"}
 window.addEventListener("error",e=>dbg("Erro: "+e.message+" (linha "+e.lineno+")"));
 window.addEventListener("unhandledrejection",e=>dbg("Erro: "+((e.reason&&e.reason.message)||e.reason)));
 
@@ -497,7 +498,7 @@ let MEDIDAS = {PP:{Cintura:"58-64",Quadril:"84-90"},P:{Cintura:"62-68",Quadril:"
 let CORES = {Azul:"#8fbbe0",Rosa:"#f1b9cc",Branco:"#f4f4f2",Lilás:"#c9b8e8",Verde:"#b5d9c3"};
 
 let PRODUTOS=[], estado="load";   // estado: load | ok | err
-let PAGAR_ONLINE=false, NOTAS={}, AV={}, revF={f:"todas",n:5}, AVL=[], AVCTX={}, rf=null;
+let REAL=null,LOJA=[],LOJAOK=false,lf=null,PAGAR_ONLINE=false, NOTAS={}, AV={}, revF={f:"todas",n:5}, AVL=[], AVCTX={}, rf=null;
 
 /* ===== FUNÇÕES ===== */
 const $=s=>document.querySelector(s), R=n=>"R$ "+n.toFixed(2).replace(".",",");
@@ -511,7 +512,7 @@ const fotosCor=(p,cor)=>{const a=fotos(p);if(!a.some(fcor))return a;const m=[...
 const preco=p=>p.promo??p.preco;
 const livre=p=>p.vars.some(x=>x.estoque>0);
 const wa=t=>`https://wa.me/${WHATS}?text=${encodeURIComponent(t)}`;
-const state={cat:"Todos",preco:0,cor:null,tam:null,ord:"novos"};
+const state={cat:"Todos",preco:0,cor:null,tam:null,ord:"novos",q:""};
 let cart=[];try{cart=JSON.parse(localStorage.getItem("ef_cart")||"[]")}catch(e){}
 const save=()=>{try{localStorage.setItem("ef_cart",JSON.stringify(cart))}catch(e){}};
 
@@ -565,6 +566,7 @@ function lista(){
     if(state.cat==="Novidades"&&!p.novo)return false;
     if(state.cat==="Promoções"&&p.promo==null)return false;
     if(["Conjuntos","Leggings","Calções","Jaquetas","Camisetas"].includes(state.cat)&&p.cat!==state.cat)return false;
+    if(state.q&&!norm(p.nome+" "+p.cat+" "+p.desc).includes(norm(state.q.trim())))return false;
     if(state.preco&&preco(p)>state.preco)return false;
     if(state.cor&&!p.vars.some(x=>x.cor===state.cor))return false;
     if(state.tam&&!p.vars.some(x=>x.tam===state.tam))return false;
@@ -760,6 +762,53 @@ function retornoPagamento(){
   setTimeout(()=>{$("#pedido").scrollIntoView();$("#tTel").focus({preventScroll:true})},500);
 }
 
+/* Avaliações reais, sem cadastro: link do WhatsApp (?avaliar=CODIGO) + telefone da compra */
+function avaliarLink(){
+  const q=new URLSearchParams(location.search),cod=(q.get("avaliar")||"").trim().toUpperCase();let u=null;try{u=JSON.parse(localStorage.getItem("ef_ult")||"null")}catch(e){}
+  const c=cod||(u&&u.c)||"";if(!c)return;
+  $("#tCod").value=c;if(u&&u.c===c&&u.t)$("#tTel").value=u.t;
+  if(!cod)return;
+  history.replaceState(null,"",location.pathname);
+  $("#pgmsg").innerHTML=`<p class="ok">Que bom que sua peça chegou! Digite o telefone da compra e toque em "Ver" para avaliar. Leva menos de 1 minuto e não precisa de cadastro.</p>`;
+  setTimeout(()=>{$("#pedido").scrollIntoView();if($("#tTel").value.replace(/\D/g,"").length>=10)rastrear();else $("#tTel").focus({preventScroll:true})},600);
+}
+/* Nota geral e comentários reais (só de compras entregues) para a página inicial */
+async function carregarReais(){
+  let m=0,t=0,ls=[];
+  try{
+    const all=Object.keys(NOTAS).filter(k=>NOTAS[k].t);t=all.reduce((n,k)=>n+NOTAS[k].t,0);m=all.reduce((n,k)=>n+NOTAS[k].m*NOTAS[k].t,0);
+    const ids=all.sort((a,b)=>NOTAS[b].t-NOTAS[a].t).slice(0,6);
+    ls=(await Promise.all(ids.map(k=>sb("/rest/v1/rpc/avaliacoes_produto",{p_produto_id:k}).then(a=>(a||[]).map(r=>({...r,ver:true,peca:(PRODUTOS.find(p=>p.id==k)||{}).nome||""}))).catch(()=>[])))).flat().filter(r=>r.comentario||(r.fotos||[]).length);
+  }catch(e){}
+  try{LOJA=(await sb("/rest/v1/rpc/avaliacoes_loja_lista",{}))||[];LOJAOK=true}catch(e){LOJAOK=false}
+  LOJA.forEach(r=>{t++;m+=r.nota;ls.push({...r,ver:false})});
+  ls.sort((a,b)=>a.criado_em<b.criado_em?1:-1);
+  REAL={m:t?m/t:0,t,ls:ls.slice(0,8)};
+}
+/* Avaliar a loja direto no site, sem compra e sem cadastro */
+function openLoja(){lf={nota:0,nome:"",com:""};drawLoja();toggle("#rov",true);$("#rov").scrollTop=0}
+function drawLoja(){
+  const f="width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:#fff";
+  $("#rmodal").innerHTML=`<button class="x" data-rclose aria-label="Fechar">×</button><h2 style="font-size:1.3rem;margin:0 36px 6px 0">Avaliar a Essence Fit</h2><p class="note" style="margin:0 0 6px">Conte como foi com a loja ou com as peças. Não precisa de cadastro nem de compra.</p>
+  <h4>Sua nota</h4><div class="starpick" role="group" aria-label="Nota">${[1,2,3,4,5].map(n=>`<button data-lstar="${n}" class="${n<=lf.nota?"on":""}" aria-label="${n} estrela${n>1?"s":""}">★</button>`).join("")}<span>${NOTA_TXT[lf.nota]}</span></div>
+  <h4>Seu nome</h4><input id="lnome" maxlength="40" placeholder="Como quer aparecer (ex.: Ana S.)" value="${esc(lf.nome)}" style="${f}">
+  <h4>Conte mais (opcional)</h4><textarea id="lcom" maxlength="600" placeholder="O que você achou?" style="${f};min-height:90px">${esc(lf.com)}</textarea>
+  <p class="note err" id="rmsg"></p><button class="btn" data-lsend style="width:100%;margin-top:10px">Enviar avaliação</button>`;
+}
+async function enviarLoja(btn){
+  const msg=$("#rmsg");lf.nome=$("#lnome").value;lf.com=$("#lcom").value;
+  if(!lf.nota){msg.textContent="Escolha de 1 a 5 estrelas.";return}
+  if(lf.nome.trim().length<2){msg.textContent="Informe seu nome.";return}
+  let ult=0;try{ult=+localStorage.getItem("ef_lojaav")||0}catch(e){}
+  if(Date.now()-ult<864e5){msg.textContent="Você já avaliou hoje. Obrigada!";return}
+  btn.disabled=true;btn.textContent="Enviando…";
+  try{
+    await sb("/rest/v1/rpc/enviar_avaliacao_loja",{p_nome:lf.nome.trim(),p_nota:lf.nota,p_comentario:lf.com.trim()||null});
+    try{localStorage.setItem("ef_lojaav",String(Date.now()))}catch(e){}
+    $("#rmodal").innerHTML=`<button class="x" data-rclose aria-label="Fechar">×</button><h2 style="font-size:1.3rem">Obrigada pela avaliação!</h2><p class="note" style="margin:10px 0 16px">Ela já aparece aqui na página.</p><button class="btn" data-rclose style="width:100%">Fechar</button>`;
+    await carregarReais();siteRender();
+  }catch(e){btn.disabled=false;btn.textContent="Enviar avaliação";msg.textContent=e.message}
+}
 /* Sacola */
 function frete(sub,cidade,retirada){
   if(retirada||!cidade)return 0;
@@ -797,7 +846,7 @@ async function finalizar(){
   const itens=cart.map(c=>{const p=PRODUTOS.find(x=>x.id===c.id);return `• ${c.qtd>1?c.qtd+"x ":""}${p.nome} (${c.cor}, ${c.tam}) ${R(preco(p)*(c.qtd||1))}`});
   try{
     const r=await sb("/rest/v1/rpc/criar_pedido",{p_nome:cliente.nome,p_telefone:cliente.tel,p_tipo:entrega.retirada?"retirada":"entrega",p_cidade:entrega.retirada?null:entrega.cidade,p_endereco:entrega.retirada?null:cliente.end,p_itens:cart.map(c=>({variacao_id:c.vid,qtd:c.qtd||1}))});
-    feito={codigo:r.codigo,tel:cliente.tel,total:+r.total,itens,ent:entrega.retirada?"retirada (a combinar)":entrega.cidade};
+    feito={codigo:r.codigo,tel:cliente.tel,total:+r.total,itens,ent:entrega.retirada?"retirada (a combinar)":entrega.cidade};try{localStorage.setItem("ef_ult",JSON.stringify({c:r.codigo,t:cliente.tel}))}catch(e){}
     cart=[];save();await carregar();
   }catch(e){btn.disabled=false;btn.textContent="Finalizar pedido";erro(e.message);await carregar();$("#cmsg")&&($("#cmsg").textContent=e.message)}
 }
@@ -892,7 +941,10 @@ function toggle(id,on){$(id).classList.toggle("on",on)}
 document.addEventListener("click",e=>{
   const t=e.target.closest("button,[data-wa]"); if(!t)return;
   const d=t.dataset;
-  if(d.fav!==undefined){toggleFav(d.fav)}
+  if(d.lopen!==undefined){openLoja()}
+  else if(d.lstar!==undefined){lf.nota=+d.lstar;drawLoja()}
+  else if(d.lsend!==undefined){enviarLoja(t)}
+  else if(d.fav!==undefined){toggleFav(d.fav)}
   else if(d.rf!==undefined){revF={f:d.rf,n:5};drawRevs()}
   else if(d.rmore!==undefined){revF.n+=5;drawRevs()}
   else if(d.util!==undefined){marcarUtil(d.util)}
@@ -923,7 +975,8 @@ document.addEventListener("click",e=>{
   else if(d.close!==undefined){toggle("#pov",false);toggle("#cov",false)}
   else if(t.id==="openCart"){drawCart();toggle("#cov",true)}
 });
-document.addEventListener("input",e=>{if(e.target.id==="rcom"&&rf)rf.com=e.target.value;const m={cNome:"nome",cTel:"tel",cEnd:"end"}[e.target.id];if(m)cliente[m]=e.target.value});
+document.addEventListener("input",e=>{if(e.target.id==="fBusca"||e.target.id==="hBusca"){const v=e.target.value;state.q=v;$(e.target.id==="hBusca"?"#fBusca":"#hBusca").value=v;if(v&&state.cat!=="Todos"){state.cat="Todos";renderFilters()}renderGrid();if(e.target.id==="hBusca"&&v.length===1)$("#loja").scrollIntoView({behavior:"smooth"})}
+  if(e.target.id==="lnome"&&lf)lf.nome=e.target.value;if(e.target.id==="lcom"&&lf)lf.com=e.target.value;if(e.target.id==="rcom"&&rf)rf.com=e.target.value;const m={cNome:"nome",cTel:"tel",cEnd:"end"}[e.target.id];if(m)cliente[m]=e.target.value});
 document.addEventListener("change",e=>{
   if(e.target.id==="fPreco"){state.preco=+e.target.value;renderGrid()}
   if(e.target.id==="fOrd"){state.ord=e.target.value;renderGrid()}
@@ -935,7 +988,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="cep")
 
 /* Início */
 document.getElementById("lb").addEventListener("click",e=>e.currentTarget.classList.remove("on"));
-bindWA();renderFilters();renderGrid();drawCart();carregar().then(()=>window.siteRender&&siteRender());retornoPagamento();
+bindWA();renderFilters();renderGrid();drawCart();carregar().then(carregarReais).then(()=>window.siteRender&&siteRender());retornoPagamento();avaliarLink();
 </script>
 <div class="ov" id="mov" role="dialog" aria-modal="true" aria-label="Menu"><div class="drawer mdrawer">
   <button class="x" data-mclose aria-label="Fechar">×</button>
@@ -968,6 +1021,15 @@ function heroShow(i){
 function railHTML(id,t,l,cat){
   return l.length?`<div class="wrap" id="${id}"><div class="rh2"><h2>${siteEsc(t)}</h2><button class="chip" data-k="cat" data-v="${cat}" data-go>Ver todos</button></div><div class="railrow">${l.slice(0,10).map(p=>`<div class="rc">${cardHTML(p)}</div>`).join("")}</div></div>`:"";
 }
+function drawReais(){
+  const d=$("#depo");
+  if(!REAL||(!REAL.t&&!LOJAOK)){d.hidden=true;d.innerHTML="";return}
+  const {m,t,ls}=REAL,E=siteEsc;d.hidden=false;
+  d.innerHTML=`<div class="wrap"><h2>${E(SITE.depoTitulo||"O que as clientes dizem")}</h2>
+  <div class="rsum dsum">${t?`<div class="rbig"><b>${nota1(m)}</b> <span>de 5</span><br>${stars(m)}<div class="hint">${t} avaliaç${t===1?"ão":"ões"}</div></div>`:`<p class="hint">Ainda não há avaliações. Seja a primeira!</p>`}
+  ${LOJAOK?`<div style="align-self:center"><button class="btn" data-lopen>Avaliar a Essence Fit</button><p class="hint" style="margin-top:6px">Sem cadastro e sem precisar comprar.</p></div>`:""}</div>
+  <div class="dgrid">${ls.map(r=>`<article class="rv dc"><div class="av">${E((r.nome_exibicao||"?")[0]).toUpperCase()}</div><div style="flex:1;min-width:0"><div class="rn">${E(r.nome_exibicao)}${r.ver?`<em class="ver">Compra verificada</em>`:""}</div>${stars(r.nota)}<div class="meta">${new Date(r.criado_em).toLocaleDateString("pt-BR")}${r.peca?" | "+E(r.peca):""}${r.variacao?" | "+E(r.variacao):""}</div>${r.comentario?`<p class="rt">${E(r.comentario)}</p>`:""}${(r.fotos||[]).length?`<div class="rph">${r.fotos.map(u=>`<button data-lb="${E(u)}" aria-label="Ampliar foto"><img src="${E(u)}" alt="" loading="lazy"></button>`).join("")}</div>`:""}${r.resposta?`<div class="rep"><b>Resposta da Essence Fit</b><br>${E(r.resposta)}</div>`:""}</div></article>`).join("")}</div></div>`;
+}
 function siteRender(){
   const S=SITE,E=siteEsc;
   $("#topbar .wrap").innerHTML=S.avisos.map(a=>`<span>${E(a)}</span>`).join("");
@@ -987,7 +1049,8 @@ function siteRender(){
   d.innerHTML=`<div class="wrap"><h2>${E(S.depoTitulo)}</h2>
     <div class="rsum dsum"><div class="rbig"><b>${nota1(med)}</b> <span>de 5</span><br>${stars(med)}<div class="hint">${tot} avaliaç${tot===1?"ão":"ões"} de clientes</div></div>
     <div class="dbars">${[5,4,3,2,1].map(n=>{const k=dn.filter(v=>v===n).length;return `<div class="dbr"><span>${n}★</span><i><u style="width:${tot?k/tot*100:0}%"></u></i><span>${k}</span></div>`}).join("")}</div></div>
-    <div class="dgrid">${S.depo.map((x,i)=>{const im=E(sImg(x.img,i+1,"cliente "+(i+1)));return `<article class="rv dc"><div class="av">${E((x.nome||"?").trim()[0]||"?").toUpperCase()}</div><div style="flex:1;min-width:0"><div class="rn">${E(x.nome)}<em class="ver">Compra verificada</em></div>${stars(dn[i])}<div class="meta">${E(x.data)}${x.variacao?" | "+E(x.variacao):""}</div><p class="rt">${E(x.texto)}</p><div class="rph"><button data-lb="${im}" aria-label="Ampliar foto"><img src="${im}" alt="" loading="lazy"></button></div></div></article>`}).join("")}</div></div>`;
+    <div class="dgrid">${S.depo.map((x,i)=>{const im=E(sImg(x.img,i+1,"cliente "+(i+1)));return `<article class="rv dc"><div class="av">${E((x.nome||"?").trim()[0]||"?").toUpperCase()}</div><div style="flex:1;min-width:0"><div class="rn">${E(x.nome)}<em class="ver">Depoimento</em></div>${stars(dn[i])}<div class="meta">${E(x.data)}${x.variacao?" | "+E(x.variacao):""}</div><p class="rt">${E(x.texto)}</p><div class="rph"><button data-lb="${im}" aria-label="Ampliar foto"><img src="${im}" alt="" loading="lazy"></button></div></div></article>`}).join("")}</div></div>`;
+  drawReais();
   $("#vipT").textContent=S.vip.titulo;$("#vipP").textContent=S.vip.texto;$("#vipB").textContent=S.vip.botao;
   $("#pgrid").innerHTML=S.pol.map(p=>`<div><h3>${E(p.t)}</h3><p>${E(p.x)}</p></div>`).join("");
   $("#rodP").textContent=S.rodape;heroShow(hi);
@@ -996,6 +1059,14 @@ function heroAuto(){clearInterval(ht);if(matchMedia("(prefers-reduced-motion:red
 document.addEventListener("click",e=>{const b=e.target.closest("[data-hs]");if(b){heroShow(+b.dataset.hs);heroAuto()}});
 document.querySelector(".hero").addEventListener("pointerenter",()=>clearInterval(ht));
 document.querySelector(".hero").addEventListener("pointerleave",heroAuto);
+/* Deslizar o banner com o dedo (ou arrastar com o mouse) */
+(function(){const h=document.querySelector(".hero");let x0=null,y0=0,mv=false;h.style.touchAction="pan-y";
+h.addEventListener("pointerdown",e=>{if(e.target.closest("button,a"))return;x0=e.clientX;y0=e.clientY;mv=false});
+h.addEventListener("pointerup",e=>{if(x0===null)return;const dx=e.clientX-x0,dy=e.clientY-y0;x0=null;
+  if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.2){mv=true;heroShow(hi+(dx<0?1:-1));heroAuto()}});
+h.addEventListener("pointercancel",()=>x0=null);
+h.addEventListener("click",e=>{if(mv){e.preventDefault();e.stopPropagation();mv=false}},true);
+h.addEventListener("dragstart",e=>e.preventDefault())})();
 /* Visualizador de fotos: zoom por pinça, roda do mouse, duplo toque, arrastar e deslizar */
 const GV={fs:[],i:0,z:1,x:0,y:0,pt:new Map(),d0:0,z0:1,drag:null,tap:0},gs=$("#gs"),gi=$("#gi");
 const gvApply=()=>{gi.style.transform=`translate(${GV.x}px,${GV.y}px) scale(${GV.z})`;gs.style.cursor=GV.z>1?"grab":"zoom-in"};

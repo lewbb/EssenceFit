@@ -150,9 +150,10 @@ const dt=x=>new Date(x).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"sho
 const ST={recebido:"Novo pedido",pago:"Pago",separando:"Separando",enviado:"Enviado",entregue:"Entregue",cancelado:"Cancelado"};
 const CATS=["Conjuntos","Leggings","Calções","Jaquetas","Camisetas"];
 let S=null;try{S=JSON.parse(localStorage.getItem("ef_admin")||"null")}catch(e){}
-let tab="pedidos",P=[],PR=[],CF={},CI=[],TM=[],AV=[],AF="todas",F={st:"aberto",q:""},PQ="",E=null,lastNew=null;
+let AL=[],tab="pedidos",P=[],PR=[],CF={},CI=[],TM=[],AV=[],AF="todas",F={st:"aberto",q:""},PQ="",E=null,lastNew=null;
 const CAI={pequeno:"Veste pequeno",certo:"Veste certinho",grande:"Veste grande"};
 const PGS={approved:"Aprovado",pending:"Aguardando pagamento",in_process:"Em análise",authorized:"Autorizado",rejected:"Recusado",cancelled:"Cancelado",refunded:"Estornado",charged_back:"Contestado"};
+const selAL="avaliacoes_loja?select=*&order=criado_em.desc&limit=300";
 const selAV="avaliacoes?select=*,produtos(nome)&order=criado_em.desc&limit=300";
 
 function toast(t){const e=$("#toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",2800)}
@@ -188,7 +189,7 @@ async function entrar(){
 /* ---------- dados ---------- */
 const selP="pedidos?select=*,pedido_itens(*),pedido_eventos(status,criado_em)&order=criado_em.desc&limit=300";
 async function loadAll(){
-  [P,PR,CF,CI,TM,AV]=await Promise.all([api(selP),api("produtos?select=*,variacoes(*)&order=criado_em.desc"),api("configuracoes?select=*&id=eq.1"),api("cidades_entrega?select=*&order=cidade"),api("tamanhos?select=*&order=ordem"),api(selAV).catch(()=>[])]);
+  [P,PR,CF,CI,TM,AV,AL]=await Promise.all([api(selP),api("produtos?select=*,variacoes(*)&order=criado_em.desc"),api("configuracoes?select=*&id=eq.1"),api("cidades_entrega?select=*&order=cidade"),api("tamanhos?select=*&order=ordem"),api(selAV).catch(()=>[]),api(selAL).catch(()=>[])]);
   CF=CF[0]||{};lastNew=P.filter(p=>p.status==="recebido").length;
 }
 async function poll(){
@@ -230,13 +231,13 @@ function openPed(id){
   <div class="card"><table>${p.pedido_itens.map(i=>`<tr><td>${i.quantidade>1?i.quantidade+"x ":""}${esc(i.nome)}<br><span class="sub">${esc(i.cor)} · ${esc(i.tamanho)}</span></td><td>${R(i.preco_unit*i.quantidade)}</td></tr>`).join("")}
   <tr><td class="sub">Subtotal</td><td>${R(p.subtotal)}</td></tr><tr><td class="sub">Frete</td><td>${p.frete?R(p.frete):"Grátis"}</td></tr><tr><td><b>Total</b></td><td><b>${R(p.total)}</b></td></tr></table></div>
   <div class="acts">${nx?`<button class="btn" data-a="st" data-id="${p.id}" data-s="${nx[0]}">${nx[1]}</button>`:""}
-  <a class="btn alt" target="_blank" rel="noopener" href="${zap(p,`Oi, ${p.nome.split(" ")[0]}! Aqui é da Essence Fit, sobre o seu pedido ${p.codigo}.`)}">Falar no WhatsApp</a></div>
+  <a class="btn alt" target="_blank" rel="noopener" href="${zap(p,`Oi, ${p.nome.split(" ")[0]}! Aqui é da Essence Fit, sobre o seu pedido ${p.codigo}.`)}">Falar no WhatsApp</a>${p.status==="entregue"?`<a class="btn sm" target="_blank" rel="noopener" href="${zap(p,`Oi, ${p.nome.split(" ")[0]}! Aqui é da Essence Fit. Sua peça chegou direitinho? Conta pra gente como foi: leva 1 minuto e não precisa de cadastro. ${new URL("index.html?avaliar="+encodeURIComponent(p.codigo),location.href).href}`)}">Pedir avaliação pelo WhatsApp</a>`:""}</div>
   ${["entregue","cancelado"].includes(p.status)?"":`<div class="acts"><button class="btn alt red sm" style="color:#fff" data-a="st" data-id="${p.id}" data-s="cancelado">Cancelar pedido</button></div>`}
   <p class="hist">${ev.map(e=>`${ST[e.status]||e.status} em ${dt(e.criado_em)}`).join("<br>")}</p></div>`);
 }
 async function setSt(id,s){
   if(s==="cancelado"&&!confirm("Cancelar este pedido? As peças voltam para o estoque."))return;
-  try{await api(`pedidos?id=eq.${id}`,{method:"PATCH",body:{status:s}});P=await api(selP);if(s==="cancelado")PR=await api("produtos?select=*,variacoes(*)&order=criado_em.desc");lastNew=P.filter(p=>p.status==="recebido").length;toast("Status atualizado");openPed(id);render()}
+  try{await api(`pedidos?id=eq.${id}`,{method:"PATCH",body:{status:s}});P=await api(selP);if(s==="cancelado")PR=await api("produtos?select=*,variacoes(*)&order=criado_em.desc");lastNew=P.filter(p=>p.status==="recebido").length;toast(s==="entregue"?"Entregue! Agora peça a avaliação da cliente.":"Status atualizado");openPed(id);render()}
   catch(e){toast(e.message)}
 }
 /* ---------- produtos ---------- */
@@ -247,7 +248,7 @@ function vProd(){
 }
 function drawProd(){
   const q=PQ.trim().toLowerCase(),l=PR.filter(p=>!q||p.nome.toLowerCase().includes(q));
-  $("#pgrid").innerHTML=l.length?l.map(p=>`<div class="card prod ${p.ativo?"":"off"}">${p.fotos[0]?`<img src="${esc(p.fotos[0])}" alt="" loading="lazy">`:`<div class="noimg">sem foto</div>`}<div class="b"><b>${esc(p.nome)}</b><p>${p.preco_promocional!=null?R(p.preco_promocional)+" (de "+R(p.preco)+")":R(p.preco)}<br>${stock(p)?stock(p)+" em estoque":"<span style='color:var(--bad)'>Esgotado</span>"} · ${p.ativo?"Visível":"Oculto"}</p>
+  $("#pgrid").innerHTML=l.length?l.map(p=>`<div class="card prod ${p.ativo?"":"off"}">${p.fotos[0]?`<img src="${esc(p.fotos[0])}" alt="" loading="lazy">`:`<div class="noimg">sem foto</div>`}<div class="b"><b>${esc(p.nome)}</b><p>${p.preco_promocional!=null?R(p.preco_promocional)+" (de "+R(p.preco)+")":R(p.preco)}<br>${stock(p)?stock(p)+" em estoque"+(stock(p)<=3?" <span style='color:var(--bad)'>· acabando</span>":""):"<span style='color:var(--bad)'>Esgotado</span>"} · ${p.ativo?"Visível":"Oculto"}</p>
   <div class="ac"><button class="btn sm" data-a="edit" data-id="${p.id}">Editar</button><button class="btn alt sm" data-a="dup" data-id="${p.id}">Duplicar</button><button class="btn alt sm" data-a="del" data-id="${p.id}">Excluir</button></div></div></div>`).join(""):`<p class="empty" style="grid-column:1/-1">Nenhum produto. Toque em "+ Novo".</p>`;
 }
 function mkE(p){
@@ -324,7 +325,7 @@ async function del(id){
 }
 /* ---------- avaliações ---------- */
 const AFL={todas:"Todas",sem:"Sem resposta",ocultas:"Ocultas"};
-async function loadAV(){try{AV=await api(selAV);if(tab==="avaliacoes"&&!$("#ov").classList.contains("on"))vAval()}catch(e){}}
+async function loadAV(){try{AV=await api(selAV);AL=await api(selAL).catch(()=>[]);if(tab==="avaliacoes"&&!$("#ov").classList.contains("on"))vAval()}catch(e){}}
 function vAval(){
   const sem=AV.filter(a=>a.visivel&&!a.resposta).length;
   $("#view").innerHTML=`<div class="chips">${Object.entries(AFL).map(([k,l])=>`<button class="chip" data-a="afl" data-id="${k}" aria-pressed="${AF===k}">${l}${k==="sem"?` (${sem})`:""}</button>`).join("")}</div><p class="sub">As avaliações aparecem na loja assim que a cliente envia. Só quem recebeu o pedido consegue avaliar. Oculte apenas o que for ofensivo ou falso.</p><div id="alist"></div>`;
@@ -332,14 +333,24 @@ function vAval(){
 }
 function drawAvalList(){
   const l=AV.filter(a=>AF==="todas"||(AF==="sem"?a.visivel&&!a.resposta:!a.visivel));
-  $("#alist").innerHTML=l.length?l.map(a=>`<div class="card rvc ${a.visivel?"":"off"}">
+  $("#alist").innerHTML=lojaCards()+(l.length?l.map(a=>`<div class="card rvc ${a.visivel?"":"off"}">
     <div style="display:flex;justify-content:space-between;gap:8px"><div><b>${esc(a.produtos&&a.produtos.nome||"Peça removida")}</b><br><span class="stars">${"★".repeat(a.nota)}${"☆".repeat(5-a.nota)}</span> <span class="sub">${esc(a.nome_exibicao)} · ${dt(a.criado_em)}</span></div>${a.visivel?"":`<span class="badge cancelado">Oculta</span>`}</div>
     ${a.variacao||a.caimento?`<p class="sub">${esc(a.variacao||"")}${a.caimento&&CAI[a.caimento]?" · "+CAI[a.caimento]:""}</p>`:""}
     ${a.comentario?`<p style="margin-top:6px">${esc(a.comentario)}</p>`:""}
     ${(a.fotos||[]).length?`<div class="ph">${a.fotos.map(u=>`<a class="th" href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt=""></a>`).join("")}</div>`:""}
     <label>Resposta da loja (aparece na página da peça)<textarea id="rs-${a.id}" maxlength="400">${esc(a.resposta||"")}</textarea></label>
-    <div class="acts"><button class="btn sm" data-a="ares" data-id="${a.id}">Salvar resposta</button><button class="btn alt sm" data-a="avis" data-id="${a.id}">${a.visivel?"Ocultar":"Mostrar"}</button><button class="btn alt sm" data-a="adel" data-id="${a.id}" style="color:var(--bad)">Excluir</button></div></div>`).join(""):`<p class="empty">Nenhuma avaliação aqui.</p>`;
+    <div class="acts"><button class="btn sm" data-a="ares" data-id="${a.id}">Salvar resposta</button><button class="btn alt sm" data-a="avis" data-id="${a.id}">${a.visivel?"Ocultar":"Mostrar"}</button><button class="btn alt sm" data-a="adel" data-id="${a.id}" style="color:var(--bad)">Excluir</button></div></div>`).join(""):(lojaCards()?"":`<p class="empty">Nenhuma avaliação aqui.</p>`));
 }
+function lojaCards(){
+  return AL.filter(a=>AF==="todas"||(AF==="sem"?a.visivel&&!a.resposta:!a.visivel)).map(a=>`<div class="card rvc ${a.visivel?"":"off"}">
+    <div style="display:flex;justify-content:space-between;gap:8px"><div><b>Avaliação da loja</b> <span class="badge">sem compra</span><br><span class="stars">${"★".repeat(a.nota)}${"☆".repeat(5-a.nota)}</span> <span class="sub">${esc(a.nome)} · ${dt(a.criado_em)}</span></div>${a.visivel?"":`<span class="badge cancelado">Oculta</span>`}</div>
+    ${a.comentario?`<p style="margin-top:6px">${esc(a.comentario)}</p>`:""}
+    <label>Resposta da loja<textarea id="rl-${a.id}" maxlength="400">${esc(a.resposta||"")}</textarea></label>
+    <div class="acts"><button class="btn sm" data-a="lres" data-id="${a.id}">Salvar resposta</button><button class="btn alt sm" data-a="lvis" data-id="${a.id}">${a.visivel?"Ocultar":"Mostrar"}</button><button class="btn alt sm" data-a="ldel" data-id="${a.id}" style="color:var(--bad)">Excluir</button></div></div>`).join("");
+}
+async function lres(id){const t=$("#rl-"+id).value.trim();try{await api(`avaliacoes_loja?id=eq.${id}`,{method:"PATCH",body:{resposta:t||null}});AL.find(x=>x.id===id).resposta=t||null;toast("Resposta salva");vAval()}catch(e){toast(e.message)}}
+async function lvis(id){const a=AL.find(x=>x.id===id);try{await api(`avaliacoes_loja?id=eq.${id}`,{method:"PATCH",body:{visivel:!a.visivel}});a.visivel=!a.visivel;toast(a.visivel?"Avaliação visível":"Avaliação oculta");vAval()}catch(e){toast(e.message)}}
+async function ldel(id){if(!confirm("Excluir esta avaliação de vez? Se for só para esconder, use Ocultar."))return;try{await api(`avaliacoes_loja?id=eq.${id}`,{method:"DELETE"});AL=AL.filter(x=>x.id!==id);toast("Avaliação excluída");vAval()}catch(e){toast(e.message)}}
 async function ares(id){const t=$("#rs-"+id).value.trim();
   try{await api(`avaliacoes?id=eq.${id}`,{method:"PATCH",body:{resposta:t||null,respondida_em:t?new Date().toISOString():null}});const a=AV.find(x=>x.id===id);a.resposta=t||null;toast(t?"Resposta salva":"Resposta removida");vAval()}catch(e){toast(e.message)}}
 async function avis(id){const a=AV.find(x=>x.id===id);
@@ -420,6 +431,7 @@ document.addEventListener("click",e=>{
   if(a==="sair")logout();
   else if(a==="tab"){tab=id;render();if(id==="avaliacoes")loadAV()}
   else if(a==="afl"){AF=id;vAval()}
+  else if(a==="lres")lres(id);else if(a==="lvis")lvis(id);else if(a==="ldel")ldel(id);
   else if(a==="ares")ares(id);else if(a==="avis")avis(id);else if(a==="adel")adel(id);
   else if(a==="fst"){F.st=id;vPed()}
   else if(a==="ped")openPed(id);
