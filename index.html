@@ -461,7 +461,8 @@ header{transition:box-shadow .25s}header.sc{box-shadow:0 4px 18px rgba(31,52,71,
     <div><h4>Atendimento</h4><a href="#" data-wa="Oi! Tenho uma dúvida sobre a Essence Fit.">WhatsApp</a><a href="https://instagram.com/ess_encefit" target="_blank" rel="noopener">Instagram @ess_encefit</a><p>Carambeí, PR</p></div>
     <div><h4>Formas de pagamento</h4><div class="fpay" style="margin-top:6px"><span>Pix</span><span>Visa</span><span>Mastercard</span><span>Elo</span></div></div>
   </div>
-  <p class="copy">© Essence Fit · Carambeí, PR</p>
+  <div class="fqr" id="fqr" hidden style="display:none;align-items:center;gap:16px;margin:22px 0 4px;padding:14px 16px;background:#fff;border-radius:18px;max-width:440px"><div id="qrsite" style="width:104px;height:104px;flex:none;background:#fff" aria-label="QR Code do site"></div><div><b style="font-weight:500">Compartilhe a Essence Fit</b><p style="font-size:.9rem;margin:2px 0 8px;color:var(--muted)">Aponte a câmera do celular para abrir o site.</p><button class="chip" id="qrbaixar">Baixar QR Code</button></div></div>
+<p class="copy">© Essence Fit · Carambeí, PR</p>
 </div></footer>
 <a class="fab" href="#" data-wa="Oi! Tenho uma dúvida sobre a Essence Fit.">WhatsApp</a>
 
@@ -1106,6 +1107,16 @@ sb("/rest/v1/configuracoes?select=site&id=eq.1").then(r=>{if(r&&r[0]&&r[0].site)
 const c=document.getElementById("count");if(c)new MutationObserver(()=>{const n=+c.textContent||0;if(n>last){t.textContent="Adicionado à sacola ✓";t.classList.add("on");clearTimeout(tm);tm=setTimeout(()=>t.classList.remove("on"),1800)}last=n}).observe(c,{childList:true,characterData:true,subtree:true});
 const h=document.querySelector("header");(function(){const R=document.getElementById("rails");if(!R)return;const add=()=>R.querySelectorAll(".railrow").forEach(r=>{const w=r.parentNode;if(w.querySelector(".rnav"))return;[["l","‹",-1],["r","›",1]].forEach(([c,t,d])=>{const b=document.createElement("button");b.className="rnav "+c;b.textContent=t;b.setAttribute("aria-label",d<0?"Anterior":"Próxima");b.onclick=()=>r.scrollBy({left:d*r.clientWidth*.8,behavior:"smooth"});w.appendChild(b)})});new MutationObserver(add).observe(R,{childList:true,subtree:true});add()})();
 addEventListener("scroll",()=>h&&h.classList.toggle("sc",scrollY>10),{passive:true})})();
+</script>
+<script>
+/* QR Code do próprio site (aparece no rodapé; só quando o site está online) */
+addEventListener("load",()=>{try{
+  if(!/^https?:/.test(location.href)||!window.qrcode)return;
+  const u=location.origin+location.pathname.replace(/index\.html$/,""),o=qrcode(0,"M");o.addData(u);o.make();
+  const svg=o.createSvgTag({cellSize:4,margin:2,scalable:true}),b=document.getElementById("qrsite"),w=document.getElementById("fqr");
+  b.innerHTML=svg;w.hidden=false;w.style.display="flex";
+  document.getElementById("qrbaixar").onclick=()=>{const im=new Image();im.onload=()=>{const c=document.createElement("canvas");c.width=c.height=1000;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,1000,1000);x.drawImage(im,0,0,1000,1000);c.toBlob(bl=>{const a=document.createElement("a");a.href=URL.createObjectURL(bl);a.download="qrcode-essence-fit.png";a.click()})};im.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg.replace("<svg",'<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000"'))};
+}catch(e){}});
 </script>
 </body>
 </html>
